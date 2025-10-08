@@ -7,7 +7,7 @@ on:
   #手动清理
   workflow_dispatch:
 
-permissions: write-all
+permissions: write-all # 仓库级别权限（用于清理任务）
 
 jobs:
   auto_clean:
@@ -27,18 +27,21 @@ jobs:
 
   run_other_workflows:
     runs-on: ubuntu-latest
-    needs: auto_clean # 确保在清理任务完成后运行
+    needs: auto_clean
+    # >>> 关键修改：在这里明确声明 actions: write 权限 <<<
+    permissions:
+      actions: write 
     steps:
       - name: Run zn-m2-oc.yml workflow
         uses: actions/github-script@v6
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |  # 使用管道符 | 来启用多行字符串
+          script: |
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'zn-m2-oc.yml',
-              ref: context.ref,
+              ref: context.ref, // 使用当前分支
             });
             console.log('Successfully dispatched zn-m2-oc.yml');
 
@@ -46,11 +49,11 @@ jobs:
         uses: actions/github-script@v6
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |  # 使用管道符 | 来启用多行字符串
+          script: |
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'zn-m2-pw.yml',
-              ref: context.ref,
+              ref: context.ref, // 使用当前分支
             });
             console.log('Successfully dispatched zn-m2-pw.yml');
