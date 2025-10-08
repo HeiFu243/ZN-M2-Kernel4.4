@@ -1,4 +1,4 @@
-name: Trigger Downstream Workflows
+name: Auto-Clean
 
 on:
   # 自动触发：每天早上6点 UTC 时间 (即北京时间 0:00)
