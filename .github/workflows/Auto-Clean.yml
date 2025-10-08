@@ -23,7 +23,8 @@ jobs:
           delete_workflows: true
           workflows_keep_day: 0
 
-  # --- 新增任务：运行其他工作流 ---
+---
+
   run_other_workflows:
     runs-on: ubuntu-latest
     needs: auto_clean # 确保在清理任务完成后运行
@@ -32,16 +33,12 @@ jobs:
         uses: actions/github-script@v6
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
+          script: |  # 使用管道符 | 来启用多行字符串
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              workflow_id: 'zn-m2-oc.yml', # 要触发的工作流文件名
-              ref: context.ref, # 使用当前分支，通常是 main 或 master
-              // 如果 zn-m2-oc.yml 需要输入参数，可以在此添加
-              // inputs: {
-              //   key: 'value'
-              // }
+              workflow_id: 'zn-m2-oc.yml',
+              ref: context.ref,
             });
             console.log('Successfully dispatched zn-m2-oc.yml');
 
@@ -49,15 +46,11 @@ jobs:
         uses: actions/github-script@v6
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
+          script: |  # 使用管道符 | 来启用多行字符串
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              workflow_id: 'zn-m2-pw.yml', # 要触发的工作流文件名
-              ref: context.ref, # 使用当前分支，通常是 main 或 master
-              // 如果 zn-m2-pw.yml 需要输入参数，可以在此添加
-              // inputs: {
-              //   key: 'value'
-              // }
+              workflow_id: 'zn-m2-pw.yml',
+              ref: context.ref,
             });
             console.log('Successfully dispatched zn-m2-pw.yml');
