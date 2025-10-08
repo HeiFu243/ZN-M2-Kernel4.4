@@ -1,25 +1,63 @@
 name: Auto-Clean
 
 on:
-  # 自动触发：每天早上6点 UTC 时间 (即北京时间 0:00)
-  # 如果您的意图是北京时间早上 6 点，cron 应为 '0 22 * * *' (即 UTC 14:00)
+  #自动清理：每天早上6点 (UTC time, which is 0 22 * * * CST)
   schedule:
     - cron: '0 22 * * *'
-  # 手动触发
+  #手动清理
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: write-all
 
 jobs:
-  # Job 1: 并行调用 zn-m2-oc.yml
-  call-zn-m2-oc:
-    # 关键：直接在 job 级别使用 'uses' 关键字调用其他工作流
-    uses: ./.github/workflows/zn-m2-oc.yml 
-    # runs-on 不需要指定，因为它会继承被调用工作流的设置
+  auto_clean:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete old Releases and Workflows
+        uses: ophub/delete-releases-workflows@main
+        with:
+          gh_token: ${{secrets.GITHUB_TOKEN}}
+          delete_releases: true
+          releases_keep_latest: 0
+          delete_tags: true
+          delete_workflows: true
+          workflows_keep_day: 0
 
-  # Job 2: 并行调用 zn-m2-pw.yml
-  call-zn-m2-pw:
-    # 关键：另一个 job 调用另一个工作流
-    # 由于没有 'needs' 依赖关系，Job 1 和 Job 2 会自动并行运行
-    uses: ./.github/workflows/zn-m2-pw.yml
+  # --- 新增任务：运行其他工作流 ---
+  run_other_workflows:
+    runs-on: ubuntu-latest
+    needs: auto_clean # 确保在清理任务完成后运行
+    steps:
+      - name: Run zn-m2-oc.yml workflow
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'zn-m2-oc.yml', # 要触发的工作流文件名
+              ref: context.ref, # 使用当前分支，通常是 main 或 master
+              // 如果 zn-m2-oc.yml 需要输入参数，可以在此添加
+              // inputs: {
+              //   key: 'value'
+              // }
+            });
+            console.log('Successfully dispatched zn-m2-oc.yml');
+
+      - name: Run zn-m2-pw.yml workflow
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'zn-m2-pw.yml', # 要触发的工作流文件名
+              ref: context.ref, # 使用当前分支，通常是 main 或 master
+              // 如果 zn-m2-pw.yml 需要输入参数，可以在此添加
+              // inputs: {
+              //   key: 'value'
+              // }
+            });
+            console.log('Successfully dispatched zn-m2-pw.yml');
